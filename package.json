@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node .\\src\\server.js",
     "aitest": "node .\\src\\openai-test.js",
-    "test": "mocha .\\test\\\\*.test.js"
+    "test": "mocha --timeout 5000 test/server.test.js"
   },
   "keywords": [],
   "author": "",

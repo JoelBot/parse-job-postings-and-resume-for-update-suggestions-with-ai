@@ -1,44 +1,43 @@
 const express = require('express');
-const axios = require('axios');
-require ('dotenv').config();
+const OpenAIAPI = require('openai');
+
+require('dotenv').config();
 
 const app = express();
-const port = 3000;
-
-// Replace 'your-api-key' with your OpenAI API key
-const openaiApiKey = process.env.OPENAI_API_KEY;
-const openaiApiUrl = 'https://api.openai.com/v1/engines/davinci-codex/completions';
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.post('/generate-response', async (req, res) => {
+const openai = new OpenAIAPI({ key: process.env.OPENAI_API_KEY });
+
+app.post('/generate-completion', async (req, res) => {
+  const { prompt } = req.body;
+
   try {
-    const { prompt } = req.body;
-
-    if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required.' });
+    const response = await openai.chat.completions.create({
+      messages: [
+        {
+        role: "system",
+        content: "you are a helpful assistant designed to output JSON.",
+    },
+    {
+      role: "user", content: prompt,
     }
+  ],
+      model: "gpt-3.5-turbo-1106",
+      response_format: { type: "json_object" },
+      //engine: 'completions',
 
-    const response = await axios.post(
-      openaiApiUrl,
-      { prompt },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`,
-        },
-      }
-    );
+    });
+    console.log(response.choices[0].message.content);
 
-    const responseData = response.data.choices[0].text;
-    res.json({ response: responseData });
+    res.json(response.choices[0].message.content);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      error: 'Internal Server Error'});
+    console.error('OpenAI API Error:', error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on port ${port}`);
 });
